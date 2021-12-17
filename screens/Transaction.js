@@ -58,31 +58,97 @@ export default class TransactionScreen extends Component {
     var { bookId, studentId } = this.state;
     await this.getBookDetails(bookId);
     await this.getStudentDetails(studentId);
+    //false, issue, return
+    var transactionType = await this.checkBookAvailability(bookId);
+    if (!transactionType) {
+      this.setState({ bookId: "", studentId: "" });
+      alert("the book does not exist in the database")
+    }
+    else if (transactionType === "issue") {
+      // isEligible can have true or false
+      var isEligible = await this.checkStudentEligibilityForBookIssue(studentId)
+      if (isEligible) {
+        var { bookName, studentName } = this.state;
+        this.initiateBookIssue(bookId, studentId, bookName, studentName);
+        alert("the book is successfuly issued")
+      }
+    }
 
-    db.collection("books")
-      .doc(bookId)
-      .get() //PROMISE
+    else if (transactionType === "return") {
+      var isEligible = await this.checkStudentEligibilityForBookReturn(bookId, studentId)
+      if (isEligible) {
+        var { bookName, studentName } = this.state;
+        this.initiateBookReturn(bookId, studentId, bookName, studentName);
+        alert("Book is returned !!")
+      }
+    }
 
-      .then(doc => {
-        //doc.data() is used to get all the information stored in the document
-        console.log(doc.data())
-        var book = doc.data();
-        if (book.is_book_available) {
-          var { bookName, studentName } = this.state;
-          this.initiateBookIssue(bookId, studentId, bookName, studentName);
-          // ToastAndroid.show("book issued to student", ToastAndroid.SHORT)
-          alert("Book is issued !!")
-        }
-        else {
-          var { bookName, studentName } = this.state;
-          this.initiateBookReturn(bookId, studentId, bookName, studentName);
-          //   ToastAndroid.show("book returned to student", ToastAndroid.SHORT)
-          alert("Book is returned !!")
-        }
-      })
+    // db.collection("books")
+    //   .doc(bookId)
+    //   .get() //PROMISE
+
+    //   .then(doc => {
+    //     //doc.data() is used to get all the information stored in the document
+    //     console.log(doc.data())
+    //     var book = doc.data();
+    //     if (book.is_book_available) {
+    //       var { bookName, studentName } = this.state;
+    //       this.initiateBookIssue(bookId, studentId, bookName, studentName);
+    //       // ToastAndroid.show("book issued to student", ToastAndroid.SHORT)
+    //       alert("Book is issued !!")
+    //     }
+    //     else {
+    //       var { bookName, studentName } = this.state;
+    //       this.initiateBookReturn(bookId, studentId, bookName, studentName);
+    //       //   ToastAndroid.show("book returned to student", ToastAndroid.SHORT)
+    //       alert("Book is returned !!")
+    //     }
+    //   })
 
   }
-
+  checkStudentEligibilityForBookIssue = async studentId => {
+    const studentRef = await db
+      .collection("students")
+      .where("student_id", "==", studentId)
+      .get()
+    var studentEligibility = ""
+    if (studentRef.docs.length == 0) {
+      this.setState({ bookId: "", studentId: "" });
+      studentEligibility = false
+      alert("the student id does not exist in the database")
+    }
+    else {
+      studentRef.docs.map(doc => {
+        if (doc.data().number_of_books_issued < 2) {
+          studentEligibility = true
+        } else {
+          studentEligibility = false
+          alert("student cannot issue more than 2 books")
+          this.setState({ bookId: "", studentId: "" });
+        }
+      })
+    }
+    return studentEligibility
+  }
+  checkStudentEligibilityForBookReturn = async (bookId, studentId) => {
+    const transactionRef = await db
+      .collection("transactions")
+      .where("book_id", "==", bookId)
+      .limit(1)
+      .get();
+    var ss = ""
+    transactionRef.docs.map(doc => {
+      var lastBookTransaction = doc.data()
+      if (lastBookTransaction.student_id === studentId){
+        ss =true
+      }else{
+        ss = false
+        alert("the book was not issued by this student")
+        this.setState({ bookId: "", studentId: "" });
+      }
+      })
+      return ss
+  }
   initiateBookIssue = (bookId, studentId, bookName, studentName) => {
     //add a transaction
     db.collection("transactions").add({
@@ -160,6 +226,22 @@ export default class TransactionScreen extends Component {
       })
   }
 
+  checkBookAvailability = async bookId => {
+    const bookRef = await db
+      .collection("books")
+      .where("book_id", "==", bookId)
+      .get()
+    var transactionType = "";
+    if (bookRef.docs.length == 0) {
+      transactionType = false
+    }
+    else {
+      bookRef.docs.map(doc => {
+        transactionType = doc.data().is_book_available ? "issue" : "return"
+      })
+    }
+    return transactionType;
+  }
   render() {
     //db.collection(<collectionName>).doc(<docId>).get()
     //destructuring assignment
@@ -235,7 +317,7 @@ const styles = StyleSheet.create({
   },
   button: {
     width: "50%",
-    height: 100,
+    height: 60,
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: "black",
@@ -246,7 +328,7 @@ const styles = StyleSheet.create({
     color: "white"
   },
   lowerContainer: {
-    marginTop: 50,
+    marginTop: 30,
     flex: 0.5,
     alignItems: "center"
   },
@@ -297,11 +379,11 @@ const styles = StyleSheet.create({
     width: 200,
     height: 200,
     resizeMode: "contain",
-    marginTop: 80
+    marginTop: 100
   },
   appName: {
-    width: 80,
-    height: 80,
+    width: 70,
+    height: 70,
     resizeMode: "contain"
   },
 

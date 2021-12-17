@@ -9,7 +9,6 @@ export default class SearchScreen extends Component {
       </View>
     );
   }
-}
 
 const styles = StyleSheet.create({
   container: {
