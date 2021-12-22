@@ -94,19 +94,19 @@ export default class SearchScreen extends Component {
           lastVisibleTransaction: doc
         });
       });
-    }else if(enteredText==="S"){
+    } else if (enteredText === "S") {
       const query = await db
-      .collection("transactions")
-      .where("student_id", "==", text)
-      .startAfter(lastVisibleTransaction)
-      .limit(10)
-      .get();
-    query.docs.map(doc => {
-      this.setState({
-        allTransactions: [...this.state.allTransactions, doc.data()],
-        lastVisibleTransaction: doc
+        .collection("transactions")
+        .where("student_id", "==", text)
+        .startAfter(lastVisibleTransaction)
+        .limit(10)
+        .get();
+      query.docs.map(doc => {
+        this.setState({
+          allTransactions: [...this.state.allTransactions, doc.data()],
+          lastVisibleTransaction: doc
+        });
       });
-    });
     }
 
   };

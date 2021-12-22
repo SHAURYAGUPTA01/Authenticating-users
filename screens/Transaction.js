@@ -139,15 +139,15 @@ export default class TransactionScreen extends Component {
     var ss = ""
     transactionRef.docs.map(doc => {
       var lastBookTransaction = doc.data()
-      if (lastBookTransaction.student_id === studentId){
-        ss =true
-      }else{
+      if (lastBookTransaction.student_id === studentId) {
+        ss = true
+      } else {
         ss = false
         alert("the book was not issued by this student")
         this.setState({ bookId: "", studentId: "" });
       }
-      })
-      return ss
+    })
+    return ss
   }
   initiateBookIssue = (bookId, studentId, bookName, studentName) => {
     //add a transaction
@@ -354,7 +354,6 @@ const styles = StyleSheet.create({
     width: 80,
     height: 50,
     backgroundColor: "red",
-    border: 10,
     borderRadius: 7,
     borderWidth: 2,
     justifyContent: "center",
